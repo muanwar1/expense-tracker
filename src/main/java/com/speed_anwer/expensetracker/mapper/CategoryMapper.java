@@ -6,10 +6,15 @@ import com.speed_anwer.expensetracker.entity.Category;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
+import java.util.List;
+
 @Mapper(componentModel = "spring")
 public interface CategoryMapper {
 
     Category toEntity(CategoryRequest request);
-    @Mapping(source = "user.id" , target = "userId")
+
+    @Mapping(source = "user.id", target = "userId")
     CategoryResponse toResponse(Category category);
+
+    List<CategoryResponse> toResponseList(List<Category> categories);
 }
