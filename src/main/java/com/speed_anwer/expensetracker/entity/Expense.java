@@ -4,12 +4,12 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Data
 @Entity
@@ -28,6 +28,7 @@ public class Expense {
     private BigDecimal amount;
 
     @NotNull
+    @PastOrPresent
     private LocalDate expenseDate;
 
     private LocalDateTime createdAt;
