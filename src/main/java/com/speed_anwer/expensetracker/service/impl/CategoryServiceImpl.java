@@ -4,6 +4,8 @@ import com.speed_anwer.expensetracker.dto.request.CategoryRequest;
 import com.speed_anwer.expensetracker.dto.response.CategoryResponse;
 import com.speed_anwer.expensetracker.entity.Category;
 import com.speed_anwer.expensetracker.entity.User;
+import com.speed_anwer.expensetracker.exception.ResourceConflictException;
+import com.speed_anwer.expensetracker.exception.ResourceNotFoundException;
 import com.speed_anwer.expensetracker.mapper.CategoryMapper;
 import com.speed_anwer.expensetracker.repository.CategoryRepository;
 import com.speed_anwer.expensetracker.repository.UserRepository;
@@ -28,9 +30,9 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryResponse createCategory(CategoryRequest request,Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         if(categoryRepository.findByNameAndUser(request.getName(),user).isPresent()){
-            throw new RuntimeException("Category already exists");
+            throw new ResourceConflictException("Category already exists");
         }
         Category category = categoryMapper.toEntity(request);
         category.setUser(user);
@@ -41,21 +43,19 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public List<CategoryResponse> getAllCategories(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         List<Category> categories = categoryRepository.findByUser(user);
-        List<CategoryResponse> categoriesResponse = categoryMapper.toResponseList(categories);
-
-        return categoriesResponse;
+        return  categoryMapper.toResponseList(categories);
     }
 
     @Override
     public CategoryResponse getCategoryById(Long userId, Long categoryId) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Category category = categoryRepository.findByIdAndUser(categoryId, user)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
         return categoryMapper.toResponse(category);
     }
@@ -64,12 +64,12 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse updateCategory(Long categoryId, Long userId, CategoryRequest request) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Category category = categoryRepository.findByIdAndUser(categoryId, user)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
         if(categoryRepository.findByNameAndUserAndIdNot(request.getName(),user,categoryId).isPresent()){
-            throw new RuntimeException("Category already exists");
+            throw new ResourceConflictException("Category already exists");
         }
         category.setName(request.getName());
         Category savedCategory = categoryRepository.save(category);
@@ -79,10 +79,10 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public void deleteCategory(Long categoryId, Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Category category = categoryRepository.findByIdAndUser(categoryId, user)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
         categoryRepository.delete(category);
     }
 }

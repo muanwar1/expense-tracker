@@ -5,6 +5,7 @@ import com.speed_anwer.expensetracker.dto.response.ExpenseResponse;
 import com.speed_anwer.expensetracker.entity.Category;
 import com.speed_anwer.expensetracker.entity.Expense;
 import com.speed_anwer.expensetracker.entity.User;
+import com.speed_anwer.expensetracker.exception.ResourceNotFoundException;
 import com.speed_anwer.expensetracker.mapper.ExpenseMapper;
 import com.speed_anwer.expensetracker.repository.CategoryRepository;
 import com.speed_anwer.expensetracker.repository.ExpenseRepository;
@@ -31,8 +32,8 @@ public class ExpenseServiceImpl implements ExpenseService {
 
     @Override
     public ExpenseResponse createExpense(ExpenseRequest request, Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-        Category category = categoryRepository.findByIdAndUser(request.getCategoryId(), user).orElseThrow(() -> new RuntimeException("Category not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        Category category = categoryRepository.findByIdAndUser(request.getCategoryId(), user).orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
         Expense expense = expenseMapper.toEntity(request);
         expense.setUser(user);
@@ -44,16 +45,15 @@ public class ExpenseServiceImpl implements ExpenseService {
 
     @Override
     public List<ExpenseResponse> getAllExpenses(Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
         List<Expense> expenses = expenseRepository.findByUser(user);
-        List<ExpenseResponse> expenseResponseList = expenseMapper.toResponseList(expenses);
-        return expenseResponseList;
+        return expenseMapper.toResponseList(expenses);
     }
 
     @Override
     public ExpenseResponse getExpenseById(Long expenseId, Long userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
-        Expense expense = expenseRepository.findByIdAndUser(expenseId, user).orElseThrow(() -> new RuntimeException("Expense not found"));
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        Expense expense = expenseRepository.findByIdAndUser(expenseId, user).orElseThrow(() -> new ResourceNotFoundException("Expense not found"));
         return expenseMapper.toResponse(expense);
     }
 
@@ -64,14 +64,14 @@ public class ExpenseServiceImpl implements ExpenseService {
             ExpenseRequest request) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         Expense expense = expenseRepository.findByIdAndUser(expenseId, user)
-                .orElseThrow(() -> new RuntimeException("Expense not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Expense not found"));
 
         Category category = categoryRepository
                 .findByIdAndUser(request.getCategoryId(), user)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Category not found"));
 
         expense.setTitle(request.getTitle());
         expense.setAmount(request.getAmount());
@@ -86,8 +86,8 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     public void deleteExpense(Long expenseId, Long userId) {
         User user  = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        Expense expense = expenseRepository.findByIdAndUser(expenseId,user).orElseThrow(() -> new RuntimeException("Expense not found")) ;
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        Expense expense = expenseRepository.findByIdAndUser(expenseId,user).orElseThrow(() -> new ResourceNotFoundException("Expense not found")) ;
         expenseRepository.delete(expense);
 
     }
