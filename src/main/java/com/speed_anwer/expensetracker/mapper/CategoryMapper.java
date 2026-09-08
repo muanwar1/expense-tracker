@@ -5,10 +5,11 @@ import com.speed_anwer.expensetracker.dto.response.CategoryResponse;
 import com.speed_anwer.expensetracker.entity.Category;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CategoryMapper {
 
     Category toEntity(CategoryRequest request);

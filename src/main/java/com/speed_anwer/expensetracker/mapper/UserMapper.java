@@ -4,9 +4,10 @@ import com.speed_anwer.expensetracker.dto.request.RegisterRequest;
 import com.speed_anwer.expensetracker.dto.response.UserResponse;
 import com.speed_anwer.expensetracker.entity.User;
 import org.mapstruct.Mapper;
+import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface UserMapper {
-    User toentity(RegisterRequest request);
+    User toEntity(RegisterRequest request);
     UserResponse toResponse(User user);
 }

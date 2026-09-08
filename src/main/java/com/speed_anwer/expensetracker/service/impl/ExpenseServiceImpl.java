@@ -1,7 +1,10 @@
 package com.speed_anwer.expensetracker.service.impl;
 
 import com.speed_anwer.expensetracker.dto.request.ExpenseRequest;
+import com.speed_anwer.expensetracker.dto.response.CategorySummary;
 import com.speed_anwer.expensetracker.dto.response.ExpenseResponse;
+import com.speed_anwer.expensetracker.dto.response.ExpenseStatistics;
+import com.speed_anwer.expensetracker.dto.response.PagedResponse;
 import com.speed_anwer.expensetracker.entity.Category;
 import com.speed_anwer.expensetracker.entity.Expense;
 import com.speed_anwer.expensetracker.entity.User;
@@ -11,8 +14,13 @@ import com.speed_anwer.expensetracker.repository.CategoryRepository;
 import com.speed_anwer.expensetracker.repository.ExpenseRepository;
 import com.speed_anwer.expensetracker.repository.UserRepository;
 import com.speed_anwer.expensetracker.service.interfaces.ExpenseService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 @Service
@@ -31,6 +39,7 @@ public class ExpenseServiceImpl implements ExpenseService {
     }
 
     @Override
+    @Transactional
     public ExpenseResponse createExpense(ExpenseRequest request, Long userId) {
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Category category = categoryRepository.findByIdAndUser(request.getCategoryId(), user).orElseThrow(() -> new ResourceNotFoundException("Category not found"));
@@ -44,10 +53,43 @@ public class ExpenseServiceImpl implements ExpenseService {
     }
 
     @Override
-    public List<ExpenseResponse> getAllExpenses(Long userId) {
+    public PagedResponse<ExpenseResponse> getAllExpenses(
+            Long userId,
+            Long categoryId,
+            LocalDate startDate,
+            LocalDate endDate,
+            Pageable pageable) {
+
         User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
-        List<Expense> expenses = expenseRepository.findByUser(user);
-        return expenseMapper.toResponseList(expenses);
+        Page<Expense> page = expenseRepository.findByUserWithFilters(user, categoryId, startDate, endDate, pageable);
+
+        return new PagedResponse<>(
+                expenseMapper.toResponseList(page.getContent()),
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages(),
+                page.isLast()
+        );
+    }
+
+    @Override
+    public ExpenseStatistics getStatistics(Long userId, LocalDate startDate, LocalDate endDate) {
+        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        List<Object[]> result = expenseRepository.aggregateTotals(user, startDate, endDate);
+        if (result.isEmpty()) {
+            return new ExpenseStatistics(BigDecimal.ZERO, BigDecimal.ZERO, 0L, List.of());
+        }
+
+        Object[] totals = result.get(0);
+        BigDecimal totalAmount = new BigDecimal(totals[0].toString());
+        long count = ((Number) totals[1]).longValue();
+        BigDecimal averageAmount = new BigDecimal(totals[2].toString());
+
+        List<CategorySummary> byCategory = expenseRepository.summarizeByCategory(user, startDate, endDate);
+
+        return new ExpenseStatistics(totalAmount, averageAmount, count, byCategory);
     }
 
     @Override
@@ -58,6 +100,7 @@ public class ExpenseServiceImpl implements ExpenseService {
     }
 
     @Override
+    @Transactional
     public ExpenseResponse updateExpense(
             Long expenseId,
             Long userId,
@@ -84,6 +127,7 @@ public class ExpenseServiceImpl implements ExpenseService {
     }
 
     @Override
+    @Transactional
     public void deleteExpense(Long expenseId, Long userId) {
         User user  = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
